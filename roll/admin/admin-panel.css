@@ -1,0 +1,198 @@
+/* Estilos generales del cuerpo de la página */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+}
+
+/* Encabezado del Dashboard */
+.dashboard-header {
+    background-color: #2c3e50;
+    color: #fff;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+#logout-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+#logout-btn:hover {
+    background-color: #c0392b;
+}
+
+/* Contenedor principal del dashboard */
+.dashboard-container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tarjetas para cada sección */
+.card {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #34495e;
+}
+
+/* Estilos de la tabla */
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+thead tr {
+    background-color: #ecf0f1;
+}
+
+th {
+    font-weight: 600;
+    color: #34495e;
+}
+
+tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para los botones de acción */
+.actions button {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    margin-right: 5px;
+    font-weight: 500;
+}
+
+.actions button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.btn-accept {
+    background-color: #2ecc71; /* Verde */
+}
+.btn-accept:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+.btn-reject {
+    background-color: #e74c3c; /* Rojo */
+}
+.btn-reject:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+.btn-view {
+    background-color: #3498db; /* Azul */
+}
+
+.btn-view:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+/* Estilos para la píldora de estado */
+.status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.8em;
+    text-transform: capitalize;
+}
+.status-pendiente { background-color: #f39c12; } /* Naranja */
+.status-aceptado { background-color: #2ecc71; } /* Verde */
+.status-rechazado { background-color: #e74c3c; } /* Rojo */
+
+/* Estilos para el Modal */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.profile-picture {
+    max-width: 120px;
+    height: auto;
+    border-radius: 50%;
+    float: left;
+    margin-right: 20px;
+}
+
+/* Estilos para la información del usuario en el header */
+.header-user-info {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-message {
+    color: #ecf0f1;
+    margin-right: 20px;
+    font-weight: 500;
+}

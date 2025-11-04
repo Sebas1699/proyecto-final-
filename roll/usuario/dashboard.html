@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel - Portal de Empleo</title>
+    <link rel="stylesheet" href="/roll/usuario/dashboard-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>Perfil Personal</h1>
+        <button id="logout-btn">Cerrar Sesión</button>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- Sección para crear/editar la hoja de vida -->
+        <section class="card">
+            <div id="cv-display">
+                <!-- Aquí se mostrará la hoja de vida en modo lectura -->
+                <div class="cv-header">
+                    <h2>Mi Hoja de Vida</h2>
+                    <button id="edit-cv-btn" class="btn-secondary">Editar</button>
+                </div>
+                <div id="cv-content-display"></div>
+            </div>
+
+            <div id="cv-edit" style="display: none;">
+                <!-- El formulario para crear/editar -->
+                <h2>Hoja de Vida</h2>
+                <p>Completa y actualiza tu información profesional.</p>
+                <div id="cv-message-container" class="message"></div>
+                <form id="cv-form">
+                    <div class="form-group">
+                        <label for="perfil_profesional">Perfil Profesional</label>
+                        <textarea id="perfil_profesional" name="perfil_profesional" rows="4" placeholder="Un breve resumen sobre ti..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="experiencia">Experiencia Laboral</label>
+                        <textarea id="experiencia" name="experiencia" rows="4" placeholder="Tus trabajos anteriores..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="educacion">Educación</label>
+                        <textarea id="educacion" name="educacion" rows="4" placeholder="Tus estudios y títulos..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="habilidades">Habilidades</label>
+                        <textarea id="habilidades" name="habilidades" rows="3" placeholder="Ej: JavaScript, Liderazgo, Excel..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="idiomas">Idiomas</label>
+                        <textarea id="idiomas" name="idiomas" rows="2" placeholder="Ej: Inglés (Avanzado), Francés (Básico)..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="referencias">Referencias</label>
+                        <textarea id="referencias" name="referencias" rows="3" placeholder="Referencias personales o profesionales..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cargo_aplicar">Cargo al que Aplicas</label>
+                        <input type="text" id="cargo_aplicar" name="cargo_aplicar" placeholder="Ej: Desarrollador Full-Stack" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="foto_perfil">Foto de Perfil (URL)</label>
+                        <input type="url" id="foto_perfil" name="foto_perfil" placeholder="https://ejemplo.com/tu-foto.jpg">
+                    </div>
+                    <button type="submit" class="btn-submit">Guardar Cambios</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
+                </form>
+            </div>
+
+            <div id="cv-create-prompt" style="display: none;">
+                <h2>Hoja de Vida</h2>
+                <p>Aún no has creado tu hoja de vida. ¡Es el primer paso hacia tu próximo empleo!</p>
+                <button id="create-cv-btn" class="btn-submit">Crear Hoja de Vida</button>
+            </div>
+        </section>
+
+        <!-- Sección para visualizar postulaciones -->
+        <section class="card">
+            <h2>Mis Postulaciones</h2>
+            <p>Aquí verás el estado de las postulaciones que has realizado.</p>
+            <div id="application-status-container" class="application-status">
+                <!-- En el futuro, aquí se listarán las postulaciones dinámicamente -->
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Referencias a los elementos del DOM
+        const cvDisplay = document.getElementById('cv-display');
+        const cvEdit = document.getElementById('cv-edit');
+        const cvCreatePrompt = document.getElementById('cv-create-prompt');
+
+        // Lógica para cerrar sesión
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token'); // Eliminamos el token
+            window.location.href = '/login.html'; // Redirigimos al login
+        });
+
+        // --- Nueva lógica para cargar los datos de la hoja de vida al entrar a la página ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            let cvData = {}; // Variable para almacenar los datos de la hoja de vida
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/cv', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                if (response.ok) {
+                    cvData = await response.json();
+                    // Decidimos qué mostrar basado en si existe un id_hoja (lo que confirma que hay una hoja de vida)
+                    if (cvData && cvData.id_hoja) {
+                        showDisplayMode(cvData);
+                        updateApplicationStatus(cvData.estado, cvData.admin_nombre); // Actualizamos el estado de la postulación
+                    } else {
+                        showCreateMode();
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar la hoja de vida:', error);
+            }
+
+            // Lógica de los botones
+            document.getElementById('create-cv-btn').addEventListener('click', () => {
+                showEditMode({}); // Muestra el formulario vacío
+            });
+
+            document.getElementById('edit-cv-btn').addEventListener('click', () => {
+                showEditMode(cvData); // Muestra el formulario con los datos cargados
+            });
+
+            document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+                // Si hay datos, vuelve a la vista de display, si no, a la de crear
+                if (cvData && cvData.id_hoja) {
+                    showDisplayMode(cvData);
+                } else {
+                    showCreateMode();
+                }
+            });
+        });
+
+        // Funciones para controlar la visibilidad
+        function showDisplayMode(data) {
+            // Rellenar la vista de solo lectura
+            const displayContent = document.getElementById('cv-content-display');
+            
+            // Generar el HTML para la imagen solo si la URL existe
+            const imageHtml = data.foto_perfil 
+                ? `<img src="${data.foto_perfil}" alt="Foto de Perfil" class="profile-picture">`
+                : '';
+
+            displayContent.innerHTML = `
+                ${imageHtml}
+                <h3>Datos Personales (No editables aquí)</h3>
+                <p><strong>Nombres:</strong> ${data.nombres || 'No especificado'}</p>
+                <p><strong>Apellidos:</strong> ${data.apellidos || 'No especificado'}</p>
+                <p><strong>Cargo a aplicar:</strong> ${data.cargo_aplicar || 'No especificado'}</p>
+                <p><strong>Perfil Profesional:</strong> ${data.perfil_profesional || 'No especificado'}</p>
+                <p><strong>Experiencia:</strong> ${data.experiencia || 'No especificada'}</p>
+            `; // Puedes agregar más campos aquí
+            cvDisplay.style.display = 'block';
+            cvEdit.style.display = 'none';
+            cvCreatePrompt.style.display = 'none';
+        }
+
+        function updateApplicationStatus(status, adminName) {
+            const statusContainer = document.getElementById('application-status-container');
+            let statusHtml = '';
+
+            if (!status) {
+                statusHtml = '<p>Aún no has creado tu hoja de vida.</p>';
+            } else {
+                const statusClass = `status-${status}`;
+                const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+                let reviewedBy = '';
+                if (status === 'aceptado' || status === 'rechazado') {
+                    reviewedBy = `<p><small>Revisado por: ${adminName || 'un administrador'}</small></p>`;
+                }
+
+                statusHtml = `
+                    <p>El estado actual de tu hoja de vida es:</p>
+                    <p><span class="status ${statusClass}">${statusText}</span></p>
+                `;
+            }
+
+            statusContainer.innerHTML = statusHtml;
+        }
+
+        function showEditMode(data) {
+            // Rellenar el formulario para editar
+            for (const key in data) {
+                if (document.getElementById(key)) {
+                    document.getElementById(key).value = data[key];
+                }
+            }
+            cvDisplay.style.display = 'none';
+            cvEdit.style.display = 'block';
+            cvCreatePrompt.style.display = 'none';
+        }
+
+        function showCreateMode() {
+            cvDisplay.style.display = 'none';
+            cvEdit.style.display = 'none';
+            cvCreatePrompt.style.display = 'block';
+        }
+
+        // Lógica para guardar la hoja de vida
+        const cvForm = document.getElementById('cv-form');
+        const cvMessageContainer = document.getElementById('cv-message-container');
+
+        cvForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            cvMessageContainer.textContent = '';
+            cvMessageContainer.className = 'message';
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // Si por alguna razón no hay token, redirigimos al login
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Recopilamos los datos del formulario
+            const formData = new FormData(cvForm);
+            const cvData = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/api/cv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Enviamos el token en la cabecera de autorización
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(cvData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    cvMessageContainer.textContent = result.message;
+                    cvMessageContainer.classList.add('success');
+                    setTimeout(() => {
+                        window.location.reload(); // Recargamos la página para ver los cambios
+                    }, 1500);
+                } else {
+                    // Si el token es inválido (403) o no se envía (401)
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = '/login.html';
+                    }
+                    cvMessageContainer.textContent = result.message || 'Ocurrió un error.';
+                    cvMessageContainer.classList.add('error');
+                }
+            } catch (error) {
+                cvMessageContainer.textContent = 'Error de conexión con el servidor.';
+                cvMessageContainer.classList.add('error');
+            }
+        });
+    </script>
+</body>
+</html>

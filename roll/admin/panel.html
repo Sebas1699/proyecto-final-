@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador</title>
+    <link rel="stylesheet" href="/roll/admin/admin-panel.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>Panel de Administrador</h1>
+        <div class="header-user-info">
+            <span id="admin-name" class="welcome-message"></span>
+            <button id="logout-btn">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="card">
+            <h2>Usuarios con Hoja de Vida</h2>
+            <p>Lista de candidatos que han completado su perfil.</p>
+            <div class="table-container">
+                <table id="cv-list-table">
+                    <thead>
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Apellidos</th>
+                            <th>Cargo al que Aplica</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cv-list-body">
+                        <!-- Las filas se insertarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal para ver la Hoja de Vida -->
+    <div id="cv-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Hoja de Vida Completa</h2>
+            <div id="modal-cv-content">
+                <!-- Contenido de la hoja de vida se insertará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('cv-modal');
+        // Lógica para cerrar sesión
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        });
+
+        // Cargar la lista de hojas de vida
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Mostrar el nombre del administrador
+            const adminName = localStorage.getItem('userName');
+            if (adminName) {
+                document.getElementById('admin-name').textContent = `Bienvenido, ${adminName}`;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/cv-list', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('No se pudo cargar la lista.');
+
+                const cvList = await response.json();
+                const tableBody = document.getElementById('cv-list-body');
+                tableBody.innerHTML = cvList.map(user => `
+                    <tr>
+                        <td>${user.nombres || ''}</td>
+                        <td>${user.apellidos || ''}</td>
+                        <td>${user.cargo_aplicar || ''}</td>
+                        <td><span class="status status-${user.estado}">${user.estado}</span></td>
+                        <td class="actions">
+                            <button class="btn-view" data-userid="${user.id_usuario}">Ver</button>
+                            <button class="btn-accept" data-userid="${user.id_usuario}" ${user.estado !== 'pendiente' ? 'disabled' : ''}>Aceptar</button>
+                            <button class="btn-reject" data-userid="${user.id_usuario}" ${user.estado !== 'pendiente' ? 'disabled' : ''}>Rechazar</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Añadir event listeners a los nuevos botones
+                document.querySelectorAll('.btn-accept, .btn-reject').forEach(button => {
+                    button.addEventListener('click', handleStatusChange);
+                });
+                document.querySelectorAll('.btn-view').forEach(button => {
+                    button.addEventListener('click', handleViewCv);
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('cv-list-body').innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
+            }
+        });
+
+        async function handleStatusChange(event) {
+            const button = event.target;
+            const userId = button.dataset.userid;
+            const status = button.classList.contains('btn-accept') ? 'aceptado' : 'rechazado';
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/admin/cv-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ userId, status })
+                });
+
+                if (!response.ok) throw new Error('La actualización falló.');
+
+                // Recargar la página para ver los cambios
+                window.location.reload();
+            } catch (error) {
+                console.error('Error al actualizar estado:', error);
+                alert('No se pudo actualizar el estado.');
+            }
+        }
+
+        async function handleViewCv(event) {
+            const userId = event.target.dataset.userid;
+            const token = localStorage.getItem('token');
+            const modalContent = document.getElementById('modal-cv-content');
+            modalContent.innerHTML = '<p>Cargando...</p>';
+            modal.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/admin/cv/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'No se pudo cargar la hoja de vida.');
+                }
+
+                const cv = await response.json();
+                const imageHtml = cv.foto_perfil ? `<img src="${cv.foto_perfil}" alt="Foto de Perfil" class="profile-picture">` : '';
+
+                modalContent.innerHTML = `
+                    ${imageHtml}
+                    <h3>${cv.nombres} ${cv.apellidos}</h3>
+                    <p><strong>Cédula:</strong> ${cv.cedula}</p>
+                    <p><strong>Correo:</strong> ${cv.correo}</p>
+                    <hr>
+                    <h4>Cargo al que Aplica</h4>
+                    <p>${cv.cargo_aplicar}</p>
+                    <h4>Perfil Profesional</h4>
+                    <p>${cv.perfil_profesional || 'No especificado'}</p>
+                    <h4>Experiencia</h4>
+                    <p>${cv.experiencia || 'No especificada'}</p>
+                    <h4>Educación</h4>
+                    <p>${cv.educacion || 'No especificada'}</p>
+                `; // Puedes añadir más campos como habilidades, idiomas, etc.
+
+            } catch (error) {
+                modalContent.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        // Lógica para cerrar el modal
+        document.querySelector('.close-button').addEventListener('click', () => modal.style.display = 'none');
+        window.addEventListener('click', (event) => {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

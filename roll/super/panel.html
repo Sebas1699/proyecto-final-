@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Superusuario</title>
+    <link rel="stylesheet" href="/roll/super/super-panel.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>Panel de Superusuario</h1>
+        <button id="logout-btn">Cerrar Sesión</button>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- 1. Crear Usuario -->
+        <section class="card">
+            <h2>Crear Nuevo Usuario</h2>
+            <div id="create-user-message" class="message"></div>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label for="nombres">Nombres</label>
+                    <input type="text" id="nombres" required>
+                </div>
+                <div class="form-group">
+                    <label for="apellidos">Apellidos</label>
+                    <input type="text" id="apellidos" required>
+                </div>
+                <div class="form-group">
+                    <label for="cedula">Cédula</label>
+                    <input type="text" id="cedula" required>
+                </div>
+                <div class="form-group">
+                    <label for="correo">Correo</label>
+                    <input type="email" id="correo" required>
+                </div>
+                <div class="form-group">
+                    <label for="contraseña">Contraseña</label>
+                    <input type="password" id="contraseña" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_rol">Rol</label>
+                    <select id="id_rol" required>
+                        <option value="3">Usuario</option>
+                        <option value="2">Administrador</option>
+                        <option value="1">Superusuario</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Crear Usuario</button>
+            </form>
+        </section>
+
+        <!-- 2. Gestionar Administradores -->
+        <section class="card">
+            <h2>Gestionar Administradores</h2>
+            <div class="table-container">
+                <table id="admins-table">
+                    <thead>
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Correo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admins-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. Ver Todos los Usuarios -->
+        <section class="card full-width">
+            <h2>Vista General de Usuarios</h2>
+            <div class="table-container">
+                <table id="all-users-table">
+                    <thead>
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Apellidos</th>
+                            <th>Rol</th>
+                            <th>Cargo a Aplicar</th>
+                            <th>Estado Hoja de Vida</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-users-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login.html';
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    });
+
+    // --- Lógica para Crear Usuario ---
+    const createUserForm = document.getElementById('create-user-form');
+    createUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const messageDiv = document.getElementById('create-user-message');
+        const userData = {
+            nombres: document.getElementById('nombres').value,
+            apellidos: document.getElementById('apellidos').value,
+            cedula: document.getElementById('cedula').value,
+            correo: document.getElementById('correo').value,
+            contraseña: document.getElementById('contraseña').value,
+            id_rol: document.getElementById('id_rol').value,
+        };
+
+        const response = await fetch('/api/super/create-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(userData)
+        });
+        const result = await response.json();
+        messageDiv.textContent = result.message;
+        messageDiv.className = `message ${response.ok ? 'success' : 'error'}`;
+        if (response.ok) {
+            createUserForm.reset();
+            loadAdmins(); // Recargar listas
+            loadAllUsers();
+        }
+    });
+
+    // --- Lógica para Cargar y Gestionar Admins ---
+    async function loadAdmins() {
+        const response = await fetch('/api/super/admins', { headers: { 'Authorization': `Bearer ${token}` } });
+        const admins = await response.json();
+        const adminsBody = document.getElementById('admins-body');
+        adminsBody.innerHTML = admins.map(admin => `
+            <tr>
+                <td>${admin.nombres} ${admin.apellidos}</td>
+                <td>${admin.correo}</td>
+                <td class="actions">
+                    <button class="btn-edit" data-userid="${admin.id_usuario}">Editar</button>
+                    <button class="btn-reject" data-userid="${admin.id_usuario}">Eliminar</button>
+                </td>
+            </tr>
+        `).join('');
+
+        document.querySelectorAll('#admins-body .btn-reject').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const userId = e.target.dataset.userid;
+                if (confirm('¿Estás seguro de que quieres eliminar a este administrador?')) {
+                    await fetch(`/api/super/user/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                    loadAdmins(); // Recargar lista
+                }
+            });
+        });
+    }
+
+    // --- Lógica para Cargar Todos los Usuarios ---
+    async function loadAllUsers() {
+        const response = await fetch('/api/super/all-users', { headers: { 'Authorization': `Bearer ${token}` } });
+        const users = await response.json();
+        const allUsersBody = document.getElementById('all-users-body');
+        allUsersBody.innerHTML = users.map(user => `
+            <tr>
+                <td>${user.nombres}</td>
+                <td>${user.apellidos}</td>
+                <td>${user.nombre_rol}</td>
+                <td>${user.cargo_aplicar || 'N/A'}</td>
+                <td>${user.estado ? `<span class="status status-${user.estado}">${user.estado}</span>` : 'N/A'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Cargar todo al iniciar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAdmins();
+        loadAllUsers();
+    });
+</script>
+</body>
+</html>
