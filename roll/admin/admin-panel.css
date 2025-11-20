@@ -1,4 +1,4 @@
-/* Estilos generales del cuerpo de la página */
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f4f7f6;
@@ -6,7 +6,7 @@ body {
     margin: 0;
 }
 
-/* Encabezado del Dashboard */
+
 .dashboard-header {
     background-color: #2c3e50;
     color: #fff;
@@ -37,14 +37,14 @@ body {
     background-color: #c0392b;
 }
 
-/* Contenedor principal del dashboard */
+
 .dashboard-container {
     padding: 30px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Tarjetas para cada sección */
+
 .card {
     background-color: #ffffff;
     padding: 25px;
@@ -57,7 +57,7 @@ body {
     color: #34495e;
 }
 
-/* Estilos de la tabla */
+
 .table-container {
     overflow-x: auto;
 }
@@ -87,7 +87,7 @@ tbody tr:hover {
     background-color: #f9f9f9;
 }
 
-/* Estilos para los botones de acción */
+/*botones de acción */
 .actions button {
     border: none;
     padding: 6px 12px;
@@ -104,28 +104,28 @@ tbody tr:hover {
 }
 
 .btn-accept {
-    background-color: #2ecc71; /* Verde */
+    background-color: #2ecc71; 
 }
 .btn-accept:hover:not(:disabled) {
     background-color: #27ae60;
 }
 
 .btn-reject {
-    background-color: #e74c3c; /* Rojo */
+    background-color: #e74c3c; 
 }
 .btn-reject:hover:not(:disabled) {
     background-color: #c0392b;
 }
 
 .btn-view {
-    background-color: #3498db; /* Azul */
+    background-color: #3498db; 
 }
 
 .btn-view:hover:not(:disabled) {
     background-color: #2980b9;
 }
 
-/* Estilos para la píldora de estado */
+
 .status {
     padding: 4px 8px;
     border-radius: 12px;
@@ -137,7 +137,7 @@ tbody tr:hover {
 .status-aceptado { background-color: #2ecc71; } /* Verde */
 .status-rechazado { background-color: #e74c3c; } /* Rojo */
 
-/* Estilos para el Modal */
+
 .modal {
     display: none; 
     position: fixed; 
@@ -185,7 +185,7 @@ tbody tr:hover {
     margin-right: 20px;
 }
 
-/* Estilos para la información del usuario en el header */
+
 .header-user-info {
     display: flex;
     align-items: center;

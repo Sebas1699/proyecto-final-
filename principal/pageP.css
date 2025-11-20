@@ -1,16 +1,15 @@
-/* Estilos generales del cuerpo de la página */
 body {
-    font-family: 'Poppins', sans-serif; /* Usamos la fuente moderna que importamos */
-    background-color: #f4f7f6; /* Un gris muy claro para el fondo */
+    font-family: 'Poppins', sans-serif; 
+    background-color: #f4f7f6; 
     color: #333;
     display: flex;
-    justify-content: center; /* Centra el contenido horizontalmente */
-    align-items: center;   /* Centra el contenido verticalmente */
-    height: 100vh;         /* Ocupa toda la altura de la pantalla */
+    justify-content: center; 
+    align-items: center;   
+    height: 100vh;   /* Ocupa toda la altura de la pantalla */
     margin: 0;
 }
 
-/* Contenedor principal */
+
 .welcome-container {
     text-align: center;
     background-color: #ffffff;
@@ -20,28 +19,25 @@ body {
     max-width: 600px;
 }
 
-/* Estilo para el título principal */
 h1 {
     font-size: 2.2em;
     color: #2c3e50;
     margin-bottom: 15px;
 }
 
-/* Estilo para el párrafo de descripción */
 p {
     font-size: 1.1em;
     color: #555;
     margin-bottom: 30px;
 }
 
-/* Contenedor de los botones de acción */
 .action-buttons {
     display: flex;
-    gap: 20px; /* Espacio entre los botones */
+    gap: 20px; /* da espacio entre botones */
     justify-content: center;
 }
 
-/* Estilo base para ambos botones */
+
 .btn {
     text-decoration: none; /* Quita el subrayado de los enlaces */
     color: #fff;
@@ -49,29 +45,29 @@ p {
     border-radius: 8px;
     font-weight: 600;
     font-size: 1em;
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Animación suave */
+    transition: background-color 0.3s ease, transform 0.2s ease; 
     display: inline-block;
 }
 
-/* Efecto al pasar el mouse por encima */
+/* efecto para cuando paso el mouse*/
 .btn:hover {
-    transform: translateY(-2px); /* Eleva ligeramente el botón */
+    transform: translateY(-2px); /*eleva el boton un toque*/
 }
 
-/* Estilo para el botón principal (Registrarse) */
+/* bton registro */
 .btn-primary {
-    background-color: #3498db; /* Azul */
+    background-color: #3498db; 
 }
 
 .btn-primary:hover {
-    background-color: #2980b9; /* Azul más oscuro */
+    background-color: #2980b9; 
 }
 
-/* Estilo para el botón secundario (Iniciar Sesión) */
+/* bton incio de sesion */
 .btn-secondary {
-    background-color: #7f8c8d; /* Gris */
+    background-color: #7f8c8d; 
 }
 
 .btn-secondary:hover {
-    background-color: #6c7a7b; /* Gris más oscuro */
+    background-color: #6c7a7b; 
 }

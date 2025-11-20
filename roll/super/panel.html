@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Superusuario</title>
-    <link rel="stylesheet" href="/roll/usuario/dashboard-styles.css"> <!-- Reutilizamos estilos -->
+    <link rel="stylesheet" href="/roll/usuario/dashboard-styles.css"> 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
         .stat-card .stat-label { font-size: 1em; color: #555; margin: 5px 0 0 0; }
         .full-width { grid-column: 1 / -1; }
 
-        /* Estilos para las tablas de gestión */
+        /* estilo unico para la tabal de gestion */
         .user-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .user-table th, .user-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         .user-table th { background-color: #f2f2f2; font-weight: 600; }
@@ -73,7 +73,7 @@
             </form>
         </section>
 
-        <!-- 2. Gestionar Administradores -->
+        <!-- Gestiona el area del Admin -->
         <section class="card full-width">
             <h2>Gestión de Usuarios</h2>
             <div class="table-container">
@@ -91,7 +91,7 @@
             </div>
         </section>
 
-        <!-- 3. Ver Todos los Usuarios -->
+        <!--muestra todos los usuarios -->
         <section class="card full-width">
             <h2>Vista General de Usuarios</h2>
             <div class="table-container">
@@ -114,6 +114,7 @@
 <div id="toast-container"></div>
 
 <script>
+    // carga la pagina inicial
     document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -126,15 +127,15 @@
         loadUsersForOverview(token);
         loadDashboardStats(token);
 
-        // Eventos
+        //cierre de sesión
         document.getElementById('logout-btn').addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = '/login.html';
         });
-
+        // formulario para la creacion de usuario
         document.getElementById('create-user-form').addEventListener('submit', (e) => createUser(e, token));
     });
-
+    // carga las estadisticas de los usuarios
     async function loadDashboardStats(token) {
         try {
             const response = await fetch('/api/super/stats', { headers: { 'Authorization': `Bearer ${token}` }});
@@ -149,7 +150,7 @@
             console.error('Error cargando estadísticas:', error);
         }
     }
-
+    // carga la tabla de usuarios para su gestion
     async function loadUsersForManagement(token) {
         try {
             const response = await fetch('/api/super/users', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -169,7 +170,7 @@
             console.error('Error cargando usuarios para gestión:', error);
         }
     }
-
+    // carga la vista general de todos usuarios sin importar su rol
     async function loadUsersForOverview(token) {
         try {
             const response = await fetch('/api/super/all-users', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -188,7 +189,7 @@
             console.error('Error cargando la vista general de usuarios:', error);
         }
     }
-
+    // me perite crear nuevos usuario desde el panel de superusuario
     async function createUser(event, token) {
         event.preventDefault();
         const form = event.target;
@@ -217,7 +218,7 @@
             showToast(error.message, 'error');
         }
     }
-
+    // mr permite eliminar usuarios desde el panel de superusuario
     async function deleteUser(userId, token) {
         if (!confirm('¿Estás seguro de que quieres eliminar a este usuario? Esta acción es irreversible.')) {
             return;
@@ -237,13 +238,13 @@
         }
     }
 
-    // Función de notificaciones
+    // muestra notificaciones flotantes
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast-notification ${type}`; // Asume que tienes clases CSS para esto
         toast.textContent = message;
-        // Añade estilos para que sea visible
+        // le ponemos estilos de una para evitar un nuevo css
         Object.assign(toast.style, { position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', padding: '12px 20px', borderRadius: '8px', color: 'white', fontWeight: '600', zIndex: '1000', opacity: '0', transition: 'opacity 0.3s, bottom 0.3s', backgroundColor: type === 'success' ? '#28a745' : '#dc3545' });
         container.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '1'; toast.style.bottom = '40px'; }, 100);

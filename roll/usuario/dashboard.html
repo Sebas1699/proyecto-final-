@@ -64,7 +64,7 @@
                     <div class="form-group">
                         <label for="foto_perfil_archivo">Foto de Perfil (subir archivo)</label>
                         <input type="file" id="foto_perfil_archivo" name="foto_perfil_archivo" accept="image/*">
-                        <!-- Campo oculto para mantener la foto existente si no se sube una nueva -->
+                        <!-- oculta el espacio de la foto si no hay una deja subir una -->
                         <input type="hidden" id="foto_perfil_existente" name="foto_perfil_existente">
                     </div>
                     <button type="submit" class="btn-submit">Guardar Cambios</button>
@@ -80,16 +80,16 @@
             </div>
         </section>
 
-        <!-- Sección para ver vacantes disponibles -->
+        <!-- me deja ver las vacantes disponibles -->
         <section class="card">
             <h2>Vacantes Disponibles</h2>
             <p>Explora las oportunidades y postúlate a la que más te interese.</p>
             <div id="vacancies-container">
-                <!-- Las vacantes se cargarán aquí dinámicamente -->
+                
             </div>
         </section>
 
-        <!-- Sección para visualizar MIS postulaciones -->
+        <!-- me deja ver mis postulaciones -->
         <section class="card">
             <h2>Mis Postulaciones</h2>
             <p>Aquí verás el estado de las postulaciones que has realizado.</p>
@@ -99,7 +99,7 @@
     </main>
 
     <script>
-        // Referencias a los elementos del DOM
+        // elemnton en forma global
         const cvDisplay = document.getElementById('cv-display');
         const cvEdit = document.getElementById('cv-edit');
         const cvCreatePrompt = document.getElementById('cv-create-prompt');
@@ -108,13 +108,13 @@
 
         // cerrar sesión
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.removeItem('token'); // Eliminamos el token
-            window.location.href = '/login.html'; // Redirigimos al login
+            localStorage.removeItem('token'); 
+            window.location.href = '/login.html'; // redirigir al login
         });
 
-        // --- cargar los datos de la hoja de vida al entrar a la página ---
+        // me llama la hoja de vida al cargar apenas entro a la pagina
         document.addEventListener('DOMContentLoaded', async () => {
-            let cvData = {}; // almacenar los datos de la hoja de vida
+            let cvData = {}; 
 
             const token = localStorage.getItem('token');
             if (!token) {
@@ -137,7 +137,7 @@
 
                 if (response.ok) {
                     cvData = await response.json();
-                    // Decidimos qué mostrar basado en si existe un id_hoja (lo que confirma que hay una hoja de vida)
+                    // verifica si hay hoja de vida
                     if (cvData && cvData.id_hoja) {
                         showDisplayMode(cvData);
                         // Si tiene CV, primero cargamos sus postulaciones para saber a qué ha aplicado
@@ -157,15 +157,15 @@
 
             // Lógica de los botones
             document.getElementById('create-cv-btn').addEventListener('click', () => {
-                showEditMode({}); // Muestra el formulario vacío
+                showEditMode({}); // muestra el formulario vacio
             });
 
             document.getElementById('edit-cv-btn').addEventListener('click', () => {
-                showEditMode(cvData); // Muestra el formulario con los datos cargados
+                showEditMode(cvData); // muestra el formulario con los datos cargados
             });
 
             document.getElementById('cancel-edit-btn').addEventListener('click', () => {
-                // Si hay datos, vuelve a la vista de display, si no, a la de crear
+                // Si hay datos vuelve a la vista de display si no a la de crear
                 if (cvData && cvData.id_hoja) {
                     showDisplayMode(cvData);
                 } else {
@@ -179,12 +179,12 @@
             // Rellenar la vista de solo lectura
             const displayContent = document.getElementById('cv-content-display');
             
-            // Generar el HTML para la imagen solo si la URL existe
+            // genera el html de la imagen si existe
             const imageHtml = data.foto_perfil 
                 ? `<img src="${data.foto_perfil}" alt="Foto de Perfil" class="profile-picture">`
                 : '';
 
-            // Función auxiliar para evitar repetir 'No especificado'
+            // ayuda a evitar repetir campos
             const displayField = (label, value) => `<p><strong>${label}:</strong> ${value || 'No especificado'}</p>`;
 
             displayContent.innerHTML = `
@@ -208,7 +208,7 @@
         }
 
         function showEditMode(data) {
-            // Lista de campos del formulario que esperamos rellenar
+            // lista de los campos del formulario
             const formFields = [
                 'perfil_profesional', 'experiencia', 'educacion', 
                 'habilidades', 'idiomas', 'referencias', 'cargo_aplicar'
@@ -222,9 +222,9 @@
                 }
             });
 
-            // Manejo especial para la foto de perfil existente
+            // manejo especial para la foto de perfil existente
             document.getElementById('foto_perfil_existente').value = data.foto_perfil || '';
-            document.getElementById('foto_perfil_archivo').value = ''; // Limpiamos el input de archivo
+            document.getElementById('foto_perfil_archivo').value = ''; 
 
             cvDisplay.style.display = 'none';
             cvEdit.style.display = 'block';
@@ -237,7 +237,7 @@
             cvCreatePrompt.style.display = 'block';
         }
 
-        // --- NUEVAS FUNCIONES PARA VACANTES Y POSTULACIONES ---
+        // muestra las vacantes disponibles
 
         async function loadVacancies(token, appliedVacancies = []) {
             try {
@@ -277,7 +277,7 @@
                 vacanciesContainer.innerHTML = '<p class="error">No se pudieron cargar las vacantes.</p>';
             }
         }
-
+        // valida y muestra mis postulaciones
         async function loadMyApplications(token) {
             try {
                 const response = await fetch('/api/my-applications', {
@@ -287,7 +287,7 @@
 
                 if (applications.length === 0) {
                     myApplicationsContainer.innerHTML = '<p>Aún no te has postulado a ninguna vacante.</p>';
-                    return []; // Devolvemos un array vacío
+                    return []; 
                 }
 
                 let applicationsHtml = '<ul>';
@@ -317,23 +317,25 @@
             } catch (error) { console.error(error); return []; }
         }
 
-        // Delegación de eventos para los botones "Aplicar"
+        // escucha cunado el usuario aplica a una vacante
         vacanciesContainer.addEventListener('click', async (event) => {
             if (event.target.classList.contains('btn-apply')) {
+                // obtiene los datso de la vacante
                 const vacanteId = event.target.dataset.id;
                 const token = localStorage.getItem('token');
                 const button = event.target;
-
+                //cambia el estado del boton
                 button.disabled = true;
                 button.textContent = 'Aplicando...';
 
                 try {
+                    // hace la peticion para aplicar a la vacante
                     const response = await fetch(`/api/vacancies/${vacanteId}/apply`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const result = await response.json();
-
+                    // maneja la respuesta exitosa o con error
                     if (response.ok) {
                         button.textContent = '¡Aplicaste!';
                         button.classList.add('applied');
@@ -348,7 +350,7 @@
             }
         });
 
-        // Lógica para guardar la hoja de vida
+        // logica del guardado de la hoja de vida
         const cvForm = document.getElementById('cv-form');
         const cvMessageContainer = document.getElementById('cv-message-container');
 
@@ -359,20 +361,18 @@
 
             const token = localStorage.getItem('token');
             if (!token) {
-                // Si por alguna razón no hay token, redirigimos al login
+                // si se pasa de la hora me hace volver a iniciar sesión
                 window.location.href = '/login.html';
                 return;
             }
 
-            // Usamos FormData para poder enviar el archivo
+            // se usa FormData para poder enviar el archivo
             const formData = new FormData(cvForm); 
 
             try {
                 const response = await fetch('/api/cv', {
                     method: 'POST',
                     headers: {
-                        // NO establecemos 'Content-Type'. El navegador lo hará automáticamente
-                        // por nosotros con el boundary correcto para FormData.
                         'Authorization': `Bearer ${token}`
                     },
                     body: formData // Enviamos el objeto FormData directamente

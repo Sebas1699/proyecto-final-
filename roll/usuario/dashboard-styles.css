@@ -1,4 +1,4 @@
-/* Estilos generales del cuerpo de la página */
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f4f7f6;
@@ -6,7 +6,7 @@ body {
     margin: 0;
 }
 
-/* Encabezado del Dashboard */
+
 .dashboard-header {
     background-color: #2c3e50;
     color: #fff;
@@ -37,7 +37,7 @@ body {
     background-color: #c0392b;
 }
 
-/* Contenedor principal del dashboard */
+
 .dashboard-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -47,7 +47,7 @@ body {
     margin: 0 auto;
 }
 
-/* Tarjetas para cada sección */
+
 .card {
     background-color: #ffffff;
     padding: 25px;
@@ -60,7 +60,7 @@ body {
     color: #34495e;
 }
 
-/* Estilos del formulario dentro de la tarjeta */
+
 .form-group {
     margin-bottom: 15px;
 }
@@ -100,7 +100,7 @@ body {
     background-color: #2980b9;
 }
 
-/* Botón secundario (Cancelar, Editar) */
+/* boton de cancelar y Editar */
 .btn-secondary {
     background-color: #95a5a6;
     color: #fff;
@@ -116,7 +116,7 @@ body {
     background-color: #7f8c8d;
 }
 
-/* Encabezado de la vista de CV */
+
 .cv-header {
     display: flex;
     justify-content: space-between;
@@ -124,7 +124,7 @@ body {
     margin-bottom: 15px;
 }
 
-/* Estilo para la foto de perfil en la vista de display */
+
 .profile-picture {
     max-width: 150px;
     height: auto;

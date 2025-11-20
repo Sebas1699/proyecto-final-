@@ -44,11 +44,12 @@
     </div>
 
     <script>
+        // llama el formulario y el mensaje
         const form = document.getElementById('register-form');
         const messageContainer = document.getElementById('message-container');
-
+        // escucha el formulario
         form.addEventListener('submit', async (event) => {
-            // Prevenimos que el formulario se envíe de la forma tradicional
+            // evita el comportamiento por defecto
             event.preventDefault();
 
             // Limpiamos mensajes anteriores
@@ -63,7 +64,7 @@
             const password = document.getElementById('password').value;
 
             try {
-                // Hacemos la petición POST al backend
+                // Hacemos la petición al servidor
                 const response = await fetch('http://localhost:3000/api/register', {
                     method: 'POST',
                     headers: {
@@ -71,14 +72,14 @@
                     },
                     body: JSON.stringify({ nombres, apellidos, cedula, email, password }),
                 });
-
+                // lee la respuesta del servidor
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Si el registro es exitoso, redirigimos directamente a la página de inicio de sesión.
+                    // si el inicio fue exitoso me manda a la pagina de login
                     window.location.href = '/login.html';
                 } else {
-                    // Si hay un error (ej: 400, 409, 500)
+                    // me muestra el mensaje de error del servidor
                     messageContainer.textContent = data.message;
                     messageContainer.classList.add('error');
                 }
