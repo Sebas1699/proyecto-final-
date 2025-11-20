@@ -16,10 +16,10 @@
     </header>
 
     <main class="dashboard-container">
-        <!-- Sección para crear/editar la hoja de vida -->
+        <!-- crear o editar la hoja de vida -->
         <section class="card">
             <div id="cv-display">
-                <!-- Aquí se mostrará la hoja de vida en modo lectura -->
+                <!-- mostrará la hoja de vida  -->
                 <div class="cv-header">
                     <h2>Mi Hoja de Vida</h2>
                     <button id="edit-cv-btn" class="btn-secondary">Editar</button>
@@ -28,7 +28,7 @@
             </div>
 
             <div id="cv-edit" style="display: none;">
-                <!-- El formulario para crear/editar -->
+                <!-- formulario de la hija de vida -->
                 <h2>Hoja de Vida</h2>
                 <p>Completa y actualiza tu información profesional.</p>
                 <div id="cv-message-container" class="message"></div>
@@ -62,8 +62,10 @@
                         <input type="text" id="cargo_aplicar" name="cargo_aplicar" placeholder="Ej: Desarrollador Full-Stack" required>
                     </div>
                     <div class="form-group">
-                        <label for="foto_perfil">Foto de Perfil (URL)</label>
-                        <input type="url" id="foto_perfil" name="foto_perfil" placeholder="https://ejemplo.com/tu-foto.jpg">
+                        <label for="foto_perfil_archivo">Foto de Perfil (subir archivo)</label>
+                        <input type="file" id="foto_perfil_archivo" name="foto_perfil_archivo" accept="image/*">
+                        <!-- Campo oculto para mantener la foto existente si no se sube una nueva -->
+                        <input type="hidden" id="foto_perfil_existente" name="foto_perfil_existente">
                     </div>
                     <button type="submit" class="btn-submit">Guardar Cambios</button>
                     <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
@@ -71,18 +73,27 @@
             </div>
 
             <div id="cv-create-prompt" style="display: none;">
+                <!-- mensaje de no hay hoja de vida -->
                 <h2>Hoja de Vida</h2>
                 <p>Aún no has creado tu hoja de vida. ¡Es el primer paso hacia tu próximo empleo!</p>
                 <button id="create-cv-btn" class="btn-submit">Crear Hoja de Vida</button>
             </div>
         </section>
 
-        <!-- Sección para visualizar postulaciones -->
+        <!-- Sección para ver vacantes disponibles -->
+        <section class="card">
+            <h2>Vacantes Disponibles</h2>
+            <p>Explora las oportunidades y postúlate a la que más te interese.</p>
+            <div id="vacancies-container">
+                <!-- Las vacantes se cargarán aquí dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Sección para visualizar MIS postulaciones -->
         <section class="card">
             <h2>Mis Postulaciones</h2>
             <p>Aquí verás el estado de las postulaciones que has realizado.</p>
-            <div id="application-status-container" class="application-status">
-                <!-- En el futuro, aquí se listarán las postulaciones dinámicamente -->
+            <div id="my-applications-container">
             </div>
         </section>
     </main>
@@ -92,16 +103,18 @@
         const cvDisplay = document.getElementById('cv-display');
         const cvEdit = document.getElementById('cv-edit');
         const cvCreatePrompt = document.getElementById('cv-create-prompt');
+        const vacanciesContainer = document.getElementById('vacancies-container');
+        const myApplicationsContainer = document.getElementById('my-applications-container');
 
-        // Lógica para cerrar sesión
+        // cerrar sesión
         document.getElementById('logout-btn').addEventListener('click', () => {
             localStorage.removeItem('token'); // Eliminamos el token
             window.location.href = '/login.html'; // Redirigimos al login
         });
 
-        // --- Nueva lógica para cargar los datos de la hoja de vida al entrar a la página ---
+        // --- cargar los datos de la hoja de vida al entrar a la página ---
         document.addEventListener('DOMContentLoaded', async () => {
-            let cvData = {}; // Variable para almacenar los datos de la hoja de vida
+            let cvData = {}; // almacenar los datos de la hoja de vida
 
             const token = localStorage.getItem('token');
             if (!token) {
@@ -127,13 +140,19 @@
                     // Decidimos qué mostrar basado en si existe un id_hoja (lo que confirma que hay una hoja de vida)
                     if (cvData && cvData.id_hoja) {
                         showDisplayMode(cvData);
-                        updateApplicationStatus(cvData.estado, cvData.admin_nombre); // Actualizamos el estado de la postulación
+                        // Si tiene CV, primero cargamos sus postulaciones para saber a qué ha aplicado
+                        const appliedVacancies = await loadMyApplications(token);
+                        // Luego cargamos las vacantes, pasando la lista de las ya aplicadas
+                        loadVacancies(token, appliedVacancies);
                     } else {
                         showCreateMode();
+                        vacanciesContainer.innerHTML = '<p>Crea tu hoja de vida para poder ver y postularte a las vacantes.</p>';
+                        myApplicationsContainer.innerHTML = '<p>Aún no tienes postulaciones.</p>';
                     }
                 }
             } catch (error) {
                 console.error('Error al cargar la hoja de vida:', error);
+                cvCreatePrompt.innerHTML = '<p class="error">Error al cargar tus datos. Intenta recargar la página.</p>';
             }
 
             // Lógica de los botones
@@ -165,50 +184,48 @@
                 ? `<img src="${data.foto_perfil}" alt="Foto de Perfil" class="profile-picture">`
                 : '';
 
+            // Función auxiliar para evitar repetir 'No especificado'
+            const displayField = (label, value) => `<p><strong>${label}:</strong> ${value || 'No especificado'}</p>`;
+
             displayContent.innerHTML = `
                 ${imageHtml}
-                <h3>Datos Personales (No editables aquí)</h3>
-                <p><strong>Nombres:</strong> ${data.nombres || 'No especificado'}</p>
-                <p><strong>Apellidos:</strong> ${data.apellidos || 'No especificado'}</p>
-                <p><strong>Cargo a aplicar:</strong> ${data.cargo_aplicar || 'No especificado'}</p>
-                <p><strong>Perfil Profesional:</strong> ${data.perfil_profesional || 'No especificado'}</p>
-                <p><strong>Experiencia:</strong> ${data.experiencia || 'No especificada'}</p>
-            `; // Puedes agregar más campos aquí
+                <h3>Datos Personales</h3>
+                ${displayField('Nombres', data.nombres)}
+                ${displayField('Apellidos', data.apellidos)}
+                
+                <h3>Información Profesional</h3>
+                ${displayField('Cargo al que Aplicas', data.cargo_aplicar)}
+                ${displayField('Perfil Profesional', data.perfil_profesional)}
+                ${displayField('Experiencia Laboral', data.experiencia)}
+                ${displayField('Educación', data.educacion)}
+                ${displayField('Habilidades', data.habilidades)}
+                ${displayField('Idiomas', data.idiomas)}
+                ${displayField('Referencias', data.referencias)}
+            `;
             cvDisplay.style.display = 'block';
             cvEdit.style.display = 'none';
             cvCreatePrompt.style.display = 'none';
         }
 
-        function updateApplicationStatus(status, adminName) {
-            const statusContainer = document.getElementById('application-status-container');
-            let statusHtml = '';
-
-            if (!status) {
-                statusHtml = '<p>Aún no has creado tu hoja de vida.</p>';
-            } else {
-                const statusClass = `status-${status}`;
-                const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-                let reviewedBy = '';
-                if (status === 'aceptado' || status === 'rechazado') {
-                    reviewedBy = `<p><small>Revisado por: ${adminName || 'un administrador'}</small></p>`;
-                }
-
-                statusHtml = `
-                    <p>El estado actual de tu hoja de vida es:</p>
-                    <p><span class="status ${statusClass}">${statusText}</span></p>
-                `;
-            }
-
-            statusContainer.innerHTML = statusHtml;
-        }
-
         function showEditMode(data) {
-            // Rellenar el formulario para editar
-            for (const key in data) {
-                if (document.getElementById(key)) {
-                    document.getElementById(key).value = data[key];
+            // Lista de campos del formulario que esperamos rellenar
+            const formFields = [
+                'perfil_profesional', 'experiencia', 'educacion', 
+                'habilidades', 'idiomas', 'referencias', 'cargo_aplicar'
+            ];
+
+            // Rellenamos cada campo si existe en los datos
+            formFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.value = data[fieldId] || ''; // Usamos '' si el dato es null o undefined
                 }
-            }
+            });
+
+            // Manejo especial para la foto de perfil existente
+            document.getElementById('foto_perfil_existente').value = data.foto_perfil || '';
+            document.getElementById('foto_perfil_archivo').value = ''; // Limpiamos el input de archivo
+
             cvDisplay.style.display = 'none';
             cvEdit.style.display = 'block';
             cvCreatePrompt.style.display = 'none';
@@ -219,6 +236,117 @@
             cvEdit.style.display = 'none';
             cvCreatePrompt.style.display = 'block';
         }
+
+        // --- NUEVAS FUNCIONES PARA VACANTES Y POSTULACIONES ---
+
+        async function loadVacancies(token, appliedVacancies = []) {
+            try {
+                const response = await fetch('/api/vacancies', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const vacancies = await response.json();
+
+                if (vacancies.length === 0) {
+                    vacanciesContainer.innerHTML = '<p>No hay vacantes disponibles en este momento.</p>';
+                    return;
+                }
+
+                const appliedIds = new Set(appliedVacancies.map(app => app.id_vacante));
+
+                let vacanciesHtml = '<ul>';
+                vacancies.forEach(vacante => {
+                    const isApplied = appliedIds.has(vacante.id_vacante);
+                    const buttonHtml = isApplied
+                        ? `<button class="btn-apply applied" disabled>Aplicaste</button>`
+                        : `<button class="btn-apply" data-id="${vacante.id_vacante}">Aplicar</button>`;
+
+                    vacanciesHtml += `
+                        <li class="vacante-item">
+                            <div>
+                                <h4>${vacante.titulo}</h4>
+                                <p>${vacante.descripcion}</p>
+                            </div>
+                            ${buttonHtml}
+                        </li>
+                    `;
+                });
+                vacanciesHtml += '</ul>';
+                vacanciesContainer.innerHTML = vacanciesHtml;
+
+            } catch (error) {
+                vacanciesContainer.innerHTML = '<p class="error">No se pudieron cargar las vacantes.</p>';
+            }
+        }
+
+        async function loadMyApplications(token) {
+            try {
+                const response = await fetch('/api/my-applications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const applications = await response.json();
+
+                if (applications.length === 0) {
+                    myApplicationsContainer.innerHTML = '<p>Aún no te has postulado a ninguna vacante.</p>';
+                    return []; // Devolvemos un array vacío
+                }
+
+                let applicationsHtml = '<ul>';
+                applications.forEach(app => {
+                    const statusClass = `status-${app.estado.replace(' ', '-')}`;
+                    const statusText = app.estado.charAt(0).toUpperCase() + app.estado.slice(1);
+                    let reviewedBy = '';
+                    if (app.admin_nombre) {
+                        reviewedBy = `<small>Revisado por: ${app.admin_nombre} ${app.admin_apellidos}</small>`;
+                    }
+
+                    applicationsHtml += `
+                        <li class="application-item">
+                            <div>
+                                <h4>${app.vacante_titulo}</h4>
+                                <p>${reviewedBy}</p>
+                            </div>
+                            <span class="status ${statusClass}">${statusText}</span>
+                        </li>
+                    `;
+                });
+                applicationsHtml += '</ul>';
+                myApplicationsContainer.innerHTML = applicationsHtml;
+
+                return applications; // Devolvemos las postulaciones para usarlas en loadVacancies
+
+            } catch (error) { console.error(error); return []; }
+        }
+
+        // Delegación de eventos para los botones "Aplicar"
+        vacanciesContainer.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('btn-apply')) {
+                const vacanteId = event.target.dataset.id;
+                const token = localStorage.getItem('token');
+                const button = event.target;
+
+                button.disabled = true;
+                button.textContent = 'Aplicando...';
+
+                try {
+                    const response = await fetch(`/api/vacancies/${vacanteId}/apply`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        button.textContent = '¡Aplicaste!';
+                        button.classList.add('applied');
+                        showToast(result.message);
+                        loadMyApplications(token); // Recargamos la lista de postulaciones
+                    } else {
+                        showToast(result.message, 'error');
+                        button.disabled = false;
+                        button.textContent = 'Aplicar';
+                    }
+                } catch (error) { console.error(error); }
+            }
+        });
 
         // Lógica para guardar la hoja de vida
         const cvForm = document.getElementById('cv-form');
@@ -236,40 +364,36 @@
                 return;
             }
 
-            // Recopilamos los datos del formulario
-            const formData = new FormData(cvForm);
-            const cvData = Object.fromEntries(formData.entries());
+            // Usamos FormData para poder enviar el archivo
+            const formData = new FormData(cvForm); 
 
             try {
                 const response = await fetch('/api/cv', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        // Enviamos el token en la cabecera de autorización
+                        // NO establecemos 'Content-Type'. El navegador lo hará automáticamente
+                        // por nosotros con el boundary correcto para FormData.
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(cvData)
+                    body: formData // Enviamos el objeto FormData directamente
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    cvMessageContainer.textContent = result.message;
-                    cvMessageContainer.classList.add('success');
+                    showToast(result.message, 'success');
                     setTimeout(() => {
                         window.location.reload(); // Recargamos la página para ver los cambios
                     }, 1500);
                 } else {
-                    // Si el token es inválido (403) o no se envía (401)
                     if (response.status === 401 || response.status === 403) {
                         window.location.href = '/login.html';
+                        return;
                     }
-                    cvMessageContainer.textContent = result.message || 'Ocurrió un error.';
-                    cvMessageContainer.classList.add('error');
+                    showToast(result.message || 'Ocurrió un error.', 'error');
                 }
             } catch (error) {
-                cvMessageContainer.textContent = 'Error de conexión con el servidor.';
-                cvMessageContainer.classList.add('error');
+                showToast('Error de conexión con el servidor.', 'error');
             }
         });
     </script>

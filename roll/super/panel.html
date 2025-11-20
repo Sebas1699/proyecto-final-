@@ -4,10 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Superusuario</title>
-    <link rel="stylesheet" href="/roll/super/super-panel.css">
+    <link rel="stylesheet" href="/roll/usuario/dashboard-styles.css"> <!-- Reutilizamos estilos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .stat-card .stat-number { font-size: 2.5em; font-weight: 600; color: #3498db; margin: 0; }
+        .stat-card .stat-label { font-size: 1em; color: #555; margin: 5px 0 0 0; }
+        .full-width { grid-column: 1 / -1; }
+
+        /* Estilos para las tablas de gestión */
+        .user-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .user-table th, .user-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .user-table th { background-color: #f2f2f2; font-weight: 600; }
+        .user-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .user-table .btn-reject { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .status { padding: 4px 8px; border-radius: 12px; color: white; font-size: 0.8em; text-transform: capitalize; }
+    </style>
 </head>
 <body>
     <header class="dashboard-header">
@@ -16,10 +31,16 @@
     </header>
 
     <main class="dashboard-container">
-        <!-- 1. Crear Usuario -->
+        <section class="full-width stats-container">
+            <div class="stat-card"><p class="stat-number" id="stats-users">0</p><p class="stat-label">Usuarios Totales</p></div>
+            <div class="stat-card"><p class="stat-number" id="stats-admins">0</p><p class="stat-label">Administradores</p></div>
+            <div class="stat-card"><p class="stat-number" id="stats-vacancies">0</p><p class="stat-label">Vacantes Activas</p></div>
+            <div class="stat-card"><p class="stat-number" id="stats-applications">0</p><p class="stat-label">Postulaciones</p></div>
+        </section>
+
         <section class="card">
             <h2>Crear Nuevo Usuario</h2>
-            <div id="create-user-message" class="message"></div>
+            <!-- Los mensajes se mostrarán como notificaciones flotantes -->
             <form id="create-user-form">
                 <div class="form-group">
                     <label for="nombres">Nombres</label>
@@ -46,7 +67,6 @@
                     <select id="id_rol" required>
                         <option value="3">Usuario</option>
                         <option value="2">Administrador</option>
-                        <option value="1">Superusuario</option>
                     </select>
                 </div>
                 <button type="submit" class="btn-submit">Crear Usuario</button>
@@ -54,18 +74,19 @@
         </section>
 
         <!-- 2. Gestionar Administradores -->
-        <section class="card">
-            <h2>Gestionar Administradores</h2>
+        <section class="card full-width">
+            <h2>Gestión de Usuarios</h2>
             <div class="table-container">
-                <table id="admins-table">
+                <table id="users-table" class="user-table">
                     <thead>
                         <tr>
                             <th>Nombres</th>
                             <th>Correo</th>
+                            <th>Rol</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="admins-body"></tbody>
+                    <tbody id="users-body"></tbody>
                 </table>
             </div>
         </section>
@@ -74,7 +95,7 @@
         <section class="card full-width">
             <h2>Vista General de Usuarios</h2>
             <div class="table-container">
-                <table id="all-users-table">
+                <table id="all-users-table" class="user-table">
                     <thead>
                         <tr>
                             <th>Nombres</th>
@@ -90,92 +111,144 @@
         </section>
     </main>
 
-<script>
-    const token = localStorage.getItem('token');
-    if (!token) window.location.href = '/login.html';
+<div id="toast-container"></div>
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        window.location.href = '/login.html';
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        // Cargar datos iniciales
+        loadUsersForManagement(token);
+        loadUsersForOverview(token);
+        loadDashboardStats(token);
+
+        // Eventos
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        });
+
+        document.getElementById('create-user-form').addEventListener('submit', (e) => createUser(e, token));
     });
 
-    // --- Lógica para Crear Usuario ---
-    const createUserForm = document.getElementById('create-user-form');
-    createUserForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const messageDiv = document.getElementById('create-user-message');
+    async function loadDashboardStats(token) {
+        try {
+            const response = await fetch('/api/super/stats', { headers: { 'Authorization': `Bearer ${token}` }});
+            const stats = await response.json();
+            if (!response.ok) throw new Error('No se pudieron cargar las estadísticas.');
+            
+            document.getElementById('stats-users').textContent = stats.users;
+            document.getElementById('stats-admins').textContent = stats.admins;
+            document.getElementById('stats-vacancies').textContent = stats.vacancies;
+            document.getElementById('stats-applications').textContent = stats.applications;
+        } catch (error) {
+            console.error('Error cargando estadísticas:', error);
+        }
+    }
+
+    async function loadUsersForManagement(token) {
+        try {
+            const response = await fetch('/api/super/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const users = await response.json();
+            const usersBody = document.getElementById('users-body');
+            usersBody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.nombres} ${user.apellidos}</td>
+                    <td>${user.correo}</td>
+                    <td>${user.nombre_rol}</td>
+                    <td class="actions">
+                        ${user.nombre_rol !== 'superusuario' ? `<button class="btn-reject" onclick="deleteUser(${user.id_usuario}, '${token}')">Eliminar</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error cargando usuarios para gestión:', error);
+        }
+    }
+
+    async function loadUsersForOverview(token) {
+        try {
+            const response = await fetch('/api/super/all-users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const users = await response.json();
+            const allUsersBody = document.getElementById('all-users-body');
+            allUsersBody.innerHTML = users.map(user => ` 
+                <tr>
+                    <td>${user.nombres}</td>
+                    <td>${user.apellidos}</td>
+                    <td>${user.nombre_rol}</td>
+                    <td>${user.cargo_aplicar || 'N/A'}</td>
+                    <td>${user.estado ? `<span class="status status-${user.estado}">${user.estado}</span>` : 'N/A'}</td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error cargando la vista general de usuarios:', error);
+        }
+    }
+
+    async function createUser(event, token) {
+        event.preventDefault();
+        const form = event.target;
         const userData = {
-            nombres: document.getElementById('nombres').value,
-            apellidos: document.getElementById('apellidos').value,
-            cedula: document.getElementById('cedula').value,
-            correo: document.getElementById('correo').value,
-            contraseña: document.getElementById('contraseña').value,
-            id_rol: document.getElementById('id_rol').value,
+            nombres: form.nombres.value,
+            apellidos: form.apellidos.value,
+            cedula: form.cedula.value,
+            correo: form.correo.value,
+            contraseña: form.contraseña.value,
+            id_rol: form.id_rol.value,
         };
 
-        const response = await fetch('/api/super/create-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(userData)
-        });
-        const result = await response.json();
-        messageDiv.textContent = result.message;
-        messageDiv.className = `message ${response.ok ? 'success' : 'error'}`;
-        if (response.ok) {
-            createUserForm.reset();
-            loadAdmins(); // Recargar listas
-            loadAllUsers();
-        }
-    });
-
-    // --- Lógica para Cargar y Gestionar Admins ---
-    async function loadAdmins() {
-        const response = await fetch('/api/super/admins', { headers: { 'Authorization': `Bearer ${token}` } });
-        const admins = await response.json();
-        const adminsBody = document.getElementById('admins-body');
-        adminsBody.innerHTML = admins.map(admin => `
-            <tr>
-                <td>${admin.nombres} ${admin.apellidos}</td>
-                <td>${admin.correo}</td>
-                <td class="actions">
-                    <button class="btn-edit" data-userid="${admin.id_usuario}">Editar</button>
-                    <button class="btn-reject" data-userid="${admin.id_usuario}">Eliminar</button>
-                </td>
-            </tr>
-        `).join('');
-
-        document.querySelectorAll('#admins-body .btn-reject').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const userId = e.target.dataset.userid;
-                if (confirm('¿Estás seguro de que quieres eliminar a este administrador?')) {
-                    await fetch(`/api/super/user/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-                    loadAdmins(); // Recargar lista
-                }
+        try {
+            const response = await fetch('/api/super/create-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(userData)
             });
-        });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+
+            showToast(result.message, 'success');
+            form.reset();
+            loadUsersForManagement(token); // Recargar la tabla de gestión
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
     }
 
-    // --- Lógica para Cargar Todos los Usuarios ---
-    async function loadAllUsers() {
-        const response = await fetch('/api/super/all-users', { headers: { 'Authorization': `Bearer ${token}` } });
-        const users = await response.json();
-        const allUsersBody = document.getElementById('all-users-body');
-        allUsersBody.innerHTML = users.map(user => `
-            <tr>
-                <td>${user.nombres}</td>
-                <td>${user.apellidos}</td>
-                <td>${user.nombre_rol}</td>
-                <td>${user.cargo_aplicar || 'N/A'}</td>
-                <td>${user.estado ? `<span class="status status-${user.estado}">${user.estado}</span>` : 'N/A'}</td>
-            </tr>
-        `).join('');
+    async function deleteUser(userId, token) {
+        if (!confirm('¿Estás seguro de que quieres eliminar a este usuario? Esta acción es irreversible.')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/super/user/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+
+            showToast(result.message, 'success');
+            loadUsersForManagement(token); // Recargar la tabla de gestión
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
     }
 
-    // Cargar todo al iniciar la página
-    document.addEventListener('DOMContentLoaded', () => {
-        loadAdmins();
-        loadAllUsers();
-    });
+    // Función de notificaciones
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`; // Asume que tienes clases CSS para esto
+        toast.textContent = message;
+        // Añade estilos para que sea visible
+        Object.assign(toast.style, { position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', padding: '12px 20px', borderRadius: '8px', color: 'white', fontWeight: '600', zIndex: '1000', opacity: '0', transition: 'opacity 0.3s, bottom 0.3s', backgroundColor: type === 'success' ? '#28a745' : '#dc3545' });
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '1'; toast.style.bottom = '40px'; }, 100);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
+    }
 </script>
 </body>
 </html>

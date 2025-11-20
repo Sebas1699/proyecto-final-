@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Portal de Empleo</title>
-    <!-- Reutilizamos la misma hoja de estilos que el formulario de registro -->
     <link rel="stylesheet" href="form-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,19 +32,21 @@
     </div>
 
     <script>
+        // guarda la infprmación del formulario y la envía al servidor
         const form = document.getElementById('login-form');
         const messageContainer = document.getElementById('message-container');
-
+        // revisa esa info pa ver si es correcta
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-
+            // me ayuda a limpiar el cache de losmensajes anteriores
             messageContainer.textContent = '';
             messageContainer.className = 'message';
-
+            // obtiene los datos del formulario
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
             try {
+                // me envia la info al servidor
                 const response = await fetch('http://localhost:3000/api/login', {
                     method: 'POST',
                     headers: {
@@ -53,15 +54,15 @@
                     },
                     body: JSON.stringify({ email, password }),
                 });
-
+                // recibe la respuesta del servidor
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Guardamos el token en el almacenamiento local del navegador
+                    // guarda la información en el almacenamiento local
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userName', data.name);
 
-                    // Redirección basada en el rol
+                    // valida el roll del usuario y redirige a la página correspondiente
                     if (data.role === 'superusuario') {
                         window.location.href = '/roll/super/panel.html';
                     } else if (data.role === 'administrador') {
@@ -69,10 +70,12 @@
                     } else if (data.role === 'usuario') {
                         window.location.href = '/roll/usuario/dashboard.html';
                     } else {
+                        // error en caso de roll no reconocido
                         messageContainer.textContent = 'Rol no reconocido.';
                         messageContainer.classList.add('error');
                     }
                 } else {
+                    // muestra el mensaje de error del servidor
                     messageContainer.textContent = data.message;
                     messageContainer.classList.add('error');
                 }
@@ -86,4 +89,4 @@
     </script>
 
 </body>
-</html>
+</html>>
